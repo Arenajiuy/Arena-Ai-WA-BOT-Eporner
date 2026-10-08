@@ -126,7 +126,7 @@ function getText(m) {
     return (x?.conversation || x?.extendedTextMessage?.text || x?.imageMessage?.caption || x?.documentMessage?.caption || '').trim();
 }
 
-const HELP = `🤖 *Arena AI v2.24 MoviePro REAL + Anti-Bug*
+const HELP = `🤖 *Arena AI v2.24.1 MoviePro REAL + Anti-Bug*
 
 *.ai <ප්‍රශ්නය>*  — AI (සිංහල OK)
 *.download <link>*  — file download (.dl) - 5 links
@@ -971,7 +971,7 @@ async function handleMovieProDownload(send, jid, msg, qualityNum, qCache) {
     let quality = qualities[qualityNum] || subtitles[qualityNum] || '720p';
     let isSubtitle = qualityNum >= 5;
     
-    const status = await send(jid, { text: `📦 *Arena MoviePro v2.24*\n\n🎬 ${anime.title}\n📺 S${season} ${episode === 'all' ? 'All Episodes' : 'E'+(episode.number||'?')}\n🎥 Quality: ${quality}\n${isSubtitle ? '💬 Sub: '+quality : ''}\n\n⏳ Getting real download links...\n🔥 Arena AI v2.24` }, { quoted: msg });
+    const status = await send(jid, { text: `📦 *Arena MoviePro v2.24.1*\n\n🎬 ${anime.title}\n📺 S${season} ${episode === 'all' ? 'All Episodes' : 'E'+(episode.number||'?')}\n🎥 Quality: ${quality}\n${isSubtitle ? '💬 Sub: '+quality : ''}\n\n⏳ Getting real download links...\n🔥 Arena AI v2.24.1` }, { quoted: msg });
     const edit = async (t) => { try { await send(jid, { text: t, edit: status.key }); } catch {} };
     
     try {
@@ -979,7 +979,7 @@ async function handleMovieProDownload(send, jid, msg, qualityNum, qCache) {
         if (anime.source === 'yts') {
             const torrents = anime.torrents || [];
             if (!torrents.length) {
-                await edit(`🎬 *${anime.title}*\nNo torrents found\n\n🔥 Arena MoviePro v2.24`);
+                await edit(`🎬 *${anime.title}*\nNo torrents found\n\n🔥 Arena MoviePro v2.24.1`);
                 return;
             }
             let selected = null;
@@ -988,17 +988,17 @@ async function handleMovieProDownload(send, jid, msg, qualityNum, qCache) {
                 selected = torrents.find(t => t.quality === quality) || torrents.find(t => t.quality === '1080p') || torrents[0];
             }
             const allTxt = torrents.map((t,i) => `${i+1}. ${t.quality} ${t.type} - ${t.size} Seeds:${t.seeds}`).join('\n');
-            await edit(`🎬 *${anime.title}*\n\n📦 *Selected:* ${selected.quality} ${selected.type} ${selected.size}\n🔗 Magnet: magnet:?xt=urn:btih:${selected.hash}&dn=${encodeURIComponent(anime.title)}\n\n📋 *All qualities:*\n${allTxt}\n\n💡 Torrent download via client (qBittorrent)\n🔥 Arena MoviePro v2.24\n⚡ YTS API: yts.am\n\n💾 Direct torrent: ${selected.url}`);
+            await edit(`🎬 *${anime.title}*\n\n📦 *Selected:* ${selected.quality} ${selected.type} ${selected.size}\n🔗 Magnet: magnet:?xt=urn:btih:${selected.hash}&dn=${encodeURIComponent(anime.title)}\n\n📋 *All qualities:*\n${allTxt}\n\n💡 Torrent download via client (qBittorrent)\n🔥 Arena MoviePro v2.24.1\n⚡ YTS API: yts.am\n\n💾 Direct torrent: ${selected.url}`);
 
             try {
                 if (anime.yt_trailer) {
-                    await send(jid, { text: `🎬 *Trailer:* ${anime.yt_trailer}\n\nUse .video ${anime.yt_trailer} to download trailer\n🔥 Arena MoviePro v2.24` });
+                    await send(jid, { text: `🎬 *Trailer:* ${anime.yt_trailer}\n\nUse .video ${anime.yt_trailer} to download trailer\n🔥 Arena MoviePro v2.24.1` });
                 } else {
                     const yts = require('yt-search');
                     const r = await yts(`${anime.title} trailer`);
                     if (r.videos && r.videos[0]) {
                         const v = r.videos[0];
-                        await send(jid, { image: { url: v.thumbnail }, caption: `🎬 *Trailer:* ${v.title.slice(0,60)}\n⏱️ ${v.timestamp} • 👁️ ${v.views}\n🔗 ${v.url}\n\n🔥 Arena MoviePro v2.24` });
+                        await send(jid, { image: { url: v.thumbnail }, caption: `🎬 *Trailer:* ${v.title.slice(0,60)}\n⏱️ ${v.timestamp} • 👁️ ${v.views}\n🔗 ${v.url}\n\n🔥 Arena MoviePro v2.24.1` });
                     }
                 }
             } catch {}
@@ -1008,18 +1008,18 @@ async function handleMovieProDownload(send, jid, msg, qualityNum, qCache) {
 
         if (episode === 'all') {
             const total = anime.episodes || 24;
-            await edit(`📦 *Arena MoviePro S${season} - All Episodes*\n\n🎬 ${anime.title}\n📊 Total: ${total} episodes\n🎥 Quality: ${quality}\n${isSubtitle ? '💬 Subtitle: '+quality : ''}\n\n⚠️ Season download = ${total} files, large!\n💡 For single episode: reply episode number (2-${Math.min(total+1,50)})\n\n🔥 *Arena MoviePro v2.24*\n✅ Real download via HiAnime + yt-dlp`);
+            await edit(`📦 *Arena MoviePro S${season} - All Episodes*\n\n🎬 ${anime.title}\n📊 Total: ${total} episodes\n🎥 Quality: ${quality}\n${isSubtitle ? '💬 Subtitle: '+quality : ''}\n\n⚠️ Season download = ${total} files, large!\n💡 For single episode: reply episode number (2-${Math.min(total+1,50)})\n\n🔥 *Arena MoviePro v2.24.1*\n✅ Real download via HiAnime + yt-dlp`);
 
             try {
                 const eps = await moviepro.getEpisodes(anime.hianimeId || anime.id, anime.source);
                 if (eps.length) {
-                    await send(jid, { text: `📋 *${anime.title} - Episode List (first 10)*\n\n${eps.slice(0,10).map((e,i)=> `${i+2}. E${e.number} - ${e.title.slice(0,30)}`).join('\n')}\n\n💡 Reply number (2-11) for single episode download\n🔥 Arena MoviePro v2.24` });
+                    await send(jid, { text: `📋 *${anime.title} - Episode List (first 10)*\n\n${eps.slice(0,10).map((e,i)=> `${i+2}. E${e.number} - ${e.title.slice(0,30)}`).join('\n')}\n\n💡 Reply number (2-11) for single episode download\n🔥 Arena MoviePro v2.24.1` });
                 }
             } catch {}
             
             if (anime.image) {
                 try {
-                    await send(jid, { image: { url: anime.image }, caption: `🎬 *${anime.title} S${season} - All Episodes*\n🎥 Quality: ${quality}\n📊 ${total} episodes\n\n🔥 Arena MoviePro v2.24\n⚡ HiAnime real download\n\n💡 Reply episode number (2-${Math.min(total+1,50)}) for single episode` });
+                    await send(jid, { image: { url: anime.image }, caption: `🎬 *${anime.title} S${season} - All Episodes*\n🎥 Quality: ${quality}\n📊 ${total} episodes\n\n🔥 Arena MoviePro v2.24.1\n⚡ HiAnime real download\n\n💡 Reply episode number (2-${Math.min(total+1,50)}) for single episode` });
                 } catch {}
             }
             return;
@@ -1027,7 +1027,7 @@ async function handleMovieProDownload(send, jid, msg, qualityNum, qCache) {
 
         const epNum = episode.number || 1;
         const epTitle = episode.title || `Episode ${epNum}`;
-        await edit(`📦 *Downloading...*\n\n🎬 ${anime.title}\n📺 S${season}E${epNum}: ${epTitle.slice(0,40)}\n🎥 Quality: ${quality}\n${isSubtitle ? '💬 Sub: '+quality : ''}\n\n⏳ Getting HiAnime sources...\n🔥 Arena MoviePro v2.24`);
+        await edit(`📦 *Downloading...*\n\n🎬 ${anime.title}\n📺 S${season}E${epNum}: ${epTitle.slice(0,40)}\n🎥 Quality: ${quality}\n${isSubtitle ? '💬 Sub: '+quality : ''}\n\n⏳ Getting HiAnime sources...\n🔥 Arena MoviePro v2.24.1`);
 
         let realLinks = null;
         try {
@@ -1057,7 +1057,7 @@ async function handleMovieProDownload(send, jid, msg, qualityNum, qCache) {
             const m3u8Url = picked.url || picked.file || picked.source;
             const subTracks = realLinks.tracks || [];
 
-            await edit(`✅ *Sources found!*\n\n🎬 ${anime.title} E${epNum}\n🎥 ${picked.quality || quality} ${picked.isM3U8 ? '(m3u8)' : '(mp4)'}\n💬 Subs: ${subTracks.length} tracks\n🔗 ${String(m3u8Url).slice(0,80)}...\n\n⏳ Downloading via yt-dlp...\n🔥 Arena MoviePro v2.24`);
+            await edit(`✅ *Sources found!*\n\n🎬 ${anime.title} E${epNum}\n🎥 ${picked.quality || quality} ${picked.isM3U8 ? '(m3u8)' : '(mp4)'}\n💬 Subs: ${subTracks.length} tracks\n🔗 ${String(m3u8Url).slice(0,80)}...\n\n⏳ Downloading via yt-dlp...\n🔥 Arena MoviePro v2.24.1`);
 
             try {
                 const media = require('./media');
@@ -1078,7 +1078,7 @@ async function handleMovieProDownload(send, jid, msg, qualityNum, qCache) {
                         }
                     } catch {}
 
-                    const caption = `✅ *${anime.title}*\n📺 S${season}E${epNum}: ${epTitle.slice(0,50)}\n🎥 Quality: ${picked.quality || quality}\n📦 ${human(stat.size)}\n${subTracks.length ? `💬 Subs: ${subTracks.map(s=>s.label||s.kind).join(', ').slice(0,100)}` : ''}\n\n🔥 *Arena MoviePro v2.24*\n⚡ Real download via HiAnime + yt-dlp\n🔗 Source: ${anime.source}`;
+                    const caption = `✅ *${anime.title}*\n📺 S${season}E${epNum}: ${epTitle.slice(0,50)}\n🎥 Quality: ${picked.quality || quality}\n📦 ${human(stat.size)}\n${subTracks.length ? `💬 Subs: ${subTracks.map(s=>s.label||s.kind).join(', ').slice(0,100)}` : ''}\n\n🔥 *Arena MoviePro v2.24.1*\n⚡ Real download via HiAnime + yt-dlp\n🔗 Source: ${anime.source}`;
 
                     const videoMsg = {
                         video: { url: dlRes.path },
@@ -1089,7 +1089,7 @@ async function handleMovieProDownload(send, jid, msg, qualityNum, qCache) {
                     if (thumbBuf) videoMsg.jpegThumbnail = thumbBuf;
                     
                     await send(jid, videoMsg, { quoted: msg });
-                    await send(jid, { text: `✅ *Download complete!*\n\n🎬 ${anime.title} E${epNum}\n🎥 ${picked.quality || quality} - ${human(stat.size)}\n\n🔥 Arena MoviePro v2.24`, edit: status.key });
+                    await send(jid, { text: `✅ *Download complete!*\n\n🎬 ${anime.title} E${epNum}\n🎥 ${picked.quality || quality} - ${human(stat.size)}\n\n🔥 Arena MoviePro v2.24.1`, edit: status.key });
                     
                     try { fs.rmSync(dlRes.path, { force: true }); } catch {}
                     log(`✅ MoviePro REAL: ${anime.title} E${epNum} ${picked.quality||quality} ${human(stat.size)}`);
@@ -1097,14 +1097,14 @@ async function handleMovieProDownload(send, jid, msg, qualityNum, qCache) {
                 }
             } catch (dlErr) {
                 console.log('[moviepro] yt-dlp fail', dlErr.message);
-                await edit(`⚠️ yt-dlp download fail: ${String(dlErr.message).slice(0,200)}\n\n🔗 Direct link:\n${String(m3u8Url).slice(0,300)}\n\n💡 Try .download ${String(m3u8Url).slice(0,100)}...\nOr set proxy: .setproxy http://...\n\n🔥 Arena MoviePro v2.24`);
+                await edit(`⚠️ yt-dlp download fail: ${String(dlErr.message).slice(0,200)}\n\n🔗 Direct link:\n${String(m3u8Url).slice(0,300)}\n\n💡 Try .download ${String(m3u8Url).slice(0,100)}...\nOr set proxy: .setproxy http://...\n\n🔥 Arena MoviePro v2.24.1`);
                 
                 try {
                     const { download } = require('./downloader');
                     if (m3u8Url.includes('.mp4')) {
                         const files = await download(m3u8Url, () => {}, { stream: false });
                         if (files[0]) {
-                            await send(jid, { video: { url: files[0].path }, fileName: `${anime.title}_E${epNum}.mp4`, caption: `✅ ${anime.title} E${epNum} ${quality}\n🔥 Arena MoviePro v2.24` }, { quoted: msg });
+                            await send(jid, { video: { url: files[0].path }, fileName: `${anime.title}_E${epNum}.mp4`, caption: `✅ ${anime.title} E${epNum} ${quality}\n🔥 Arena MoviePro v2.24.1` }, { quoted: msg });
                             try { fs.rmSync(files[0].path, { force: true }); } catch {}
                             return;
                         }
@@ -1113,7 +1113,7 @@ async function handleMovieProDownload(send, jid, msg, qualityNum, qCache) {
             }
 
             await send(jid, {
-                text: `🎬 *${anime.title}*\n📺 S${season}E${epNum}: ${epTitle}\n🎥 Quality: ${picked.quality || quality}\n\n📥 *Direct source:*\n${String(m3u8Url).slice(0,400)}\n\n💬 *Subtitles:* ${subTracks.length ? subTracks.map(t=> `${t.label||t.kind} - ${t.file?.slice(0,60)}`).join('\n') : 'None'}\n\n🔥 *Arena MoviePro v2.24*\n⚡ Source: HiAnime (${anime.hianimeId || anime.id})\n💡 Use .download <link> or set proxy if blocked\n🔗 Info: ${anime.url || ''}`
+                text: `🎬 *${anime.title}*\n📺 S${season}E${epNum}: ${epTitle}\n🎥 Quality: ${picked.quality || quality}\n\n📥 *Direct source:*\n${String(m3u8Url).slice(0,400)}\n\n💬 *Subtitles:* ${subTracks.length ? subTracks.map(t=> `${t.label||t.kind} - ${t.file?.slice(0,60)}`).join('\n') : 'None'}\n\n🔥 *Arena MoviePro v2.24.1*\n⚡ Source: HiAnime (${anime.hianimeId || anime.id})\n💡 Use .download <link> or set proxy if blocked\n🔗 Info: ${anime.url || ''}`
             });
             
             try {
@@ -1121,12 +1121,12 @@ async function handleMovieProDownload(send, jid, msg, qualityNum, qCache) {
                 const r = await yts(`${anime.title} episode ${epNum} trailer`);
                 if (r.videos && r.videos[0]) {
                     const v = r.videos[0];
-                    await send(jid, { image: { url: v.thumbnail }, caption: `🎬 *Trailer:* ${v.title.slice(0,60)}\n⏱️ ${v.timestamp} • 👁️ ${v.views}\n🔗 ${v.url}\n\n🔥 Arena MoviePro v2.24` });
+                    await send(jid, { image: { url: v.thumbnail }, caption: `🎬 *Trailer:* ${v.title.slice(0,60)}\n⏱️ ${v.timestamp} • 👁️ ${v.views}\n🔗 ${v.url}\n\n🔥 Arena MoviePro v2.24.1` });
                 }
             } catch {}
 
         } else {
-            await edit(`⚠️ *Real sources not found*\n\n🎬 ${anime.title} E${epNum}\n🔍 HiAnime search failed (cloudflare/block)\n\n💡 Trying alternative...\n🔥 Arena MoviePro v2.24`);
+            await edit(`⚠️ *Real sources not found*\n\n🎬 ${anime.title} E${epNum}\n🔍 HiAnime search failed (cloudflare/block)\n\n💡 Trying alternative...\n🔥 Arena MoviePro v2.24.1`);
 
             let fallbackNote = `\n🔗 Info: ${anime.url || ''}`;
             if (anime.source !== 'hianime') {
@@ -1144,7 +1144,7 @@ async function handleMovieProDownload(send, jid, msg, qualityNum, qCache) {
                       `• Real download via HiAnime (requires access)\n` +
                       `• Quality: 1080p/720p/480p/360p\n` +
                       `• Subtitles: Sinhala, English, etc\n\n` +
-                      `🔥 *Arena MoviePro v2.24*\n` +
+                      `🔥 *Arena MoviePro v2.24.1*\n` +
                       `⚡ Own API - HiAnime + Jikan + YTS\n` +
                       `💡 If blocked: .setproxy <residential proxy>\n` +
                       `💡 Use .download <direct link> if you have link\n` +
@@ -1156,7 +1156,7 @@ async function handleMovieProDownload(send, jid, msg, qualityNum, qCache) {
                 const r = await yts(`${anime.title} ${epTitle} trailer`);
                 if (r.videos && r.videos[0]) {
                     const v = r.videos[0];
-                    await send(jid, { image: { url: v.thumbnail }, caption: `🎬 *Trailer (fallback):* ${v.title.slice(0,60)}\n⏱️ ${v.timestamp} • 👁️ ${v.views}\n🔗 ${v.url}\n\n⚠️ Real episode blocked - trailer shown\n🔥 Arena MoviePro v2.24\n💡 Set proxy for real download` });
+                    await send(jid, { image: { url: v.thumbnail }, caption: `🎬 *Trailer (fallback):* ${v.title.slice(0,60)}\n⏱️ ${v.timestamp} • 👁️ ${v.views}\n🔗 ${v.url}\n\n⚠️ Real episode blocked - trailer shown\n🔥 Arena MoviePro v2.24.1\n💡 Set proxy for real download` });
                 }
             } catch {}
         }

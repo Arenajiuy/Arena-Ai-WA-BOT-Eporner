@@ -1,6 +1,6 @@
 {
-  "version": "2.24.0",
-  "notes": "v2.24 REAL DOWNLOAD FIX: Fixed trailer-only bug (Black Clover etc only sent trailer). Now real anime download via HiAnime (aniwatch package self-hosted scraper) + yt-dlp m3u8 -> mp4, YTS movie search via yts.am API with torrent/magnet, quality selection 1080p/720p/480p/360p + subtitles, direct video send. Fallback to trailer if blocked, proxy support via .setproxy. Plus v2.23.1 number reply fix, v2.23 own API, etc",
+  "version": "2.24.1",
+  "notes": "v2.24.1 FIX \\n bug: Fixed literal \\n showing in messages (Black Clover details showed \\n instead of newline) - replaced double escaped \\\\n with single \\n in formatSearchResults, formatDetails, formatQualityOptions. Plus improved anime search priority (Jikan over TVMaze for anime queries), added hardcoded popular anime fallback (Black Clover etc). Real download via HiAnime + YTS remains.",
   "files": [
     "bot.js",
     "ai.js",

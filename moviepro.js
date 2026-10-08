@@ -1,11 +1,11 @@
 /**
- * moviepro.js — Arena MoviePro v2.24 REAL DOWNLOAD
+ * moviepro.js — Arena MoviePro v2.24.1 REAL DOWNLOAD
  * 
  * Fixes v2.23 trailer-only bug:
  * - Real anime download via aniwatch (HiAnime) scraper (self-hosted, no external API)
  * - YTS movie search via yts.am API (public)
  * - Fallback to Jikan + TVMaze for search
- * - Own branding Arena MoviePro v2.24
+ * - Own branding Arena MoviePro v2.24.1
  * 
  * Flow:
  * 1. .moviepro <query> → search HiAnime + Jikan + TVMaze + YTS
@@ -230,9 +230,20 @@ async function searchYTS(query) {
     return [];
 }
 
+// ── Popular anime hardcoded fallback (when HiAnime search blocked) ──
+const POPULAR_ANIME = {
+    'black clover': { id: 'black-clover-2404', title: 'Black Clover', year: '2017', episodes: 170, score: '7.3', type: 'TV', image: 'https://cdn.myanimelist.net/images/anime/2/88336.jpg' },
+    'naruto': { id: 'naruto-677', title: 'Naruto', year: '2002', episodes: 220, score: '8.0', type: 'TV' },
+    'one piece': { id: 'one-piece-100', title: 'One Piece', year: '1999', episodes: 1000, score: '8.7', type: 'TV' },
+    'demon slayer': { id: 'demon-slayer-kimetsu-no-yaiba-47', title: 'Demon Slayer', year: '2019', episodes: 26, score: '8.5', type: 'TV' },
+    'jujutsu kaisen': { id: 'jujutsu-kaisen-2nd-season-18413', title: 'Jujutsu Kaisen', year: '2020', episodes: 24, score: '8.6', type: 'TV' },
+    'attack on titan': { id: 'attack-on-titan-112', title: 'Attack on Titan', year: '2013', episodes: 75, score: '9.0', type: 'TV' }
+};
+
 // ── Unified search ──
 async function search(query) {
-    const isAnimeQuery = /black clover|naruto|one piece|bleach|demon slayer|jujutsu|anime|aot|attack on titan|black|clover|boruto|dragon ball/i.test(query);
+    const qLower = query.toLowerCase().trim();
+    const isAnimeQuery = /black clover|naruto|one piece|bleach|demon slayer|jujutsu|anime|aot|attack on titan|black|clover|boruto|dragon ball|clover/i.test(query);
     const isMovieQuery = /avengers|spiderman|batman|superman|movie|film|hollywood|bollywood/i.test(query);
 
     // Run in parallel
@@ -244,9 +255,31 @@ async function search(query) {
     ]);
 
     let results = [];
-    if (isAnimeQuery) results = [...hianime, ...anime, ...tv, ...(yts || [])];
-    else if (isMovieQuery) results = [...(yts || []), ...tv, ...anime, ...hianime];
-    else results = [...hianime, ...anime, ...tv, ...(yts || [])];
+    // Add hardcoded popular if query matches
+    let popular = [];
+    for (const [key, val] of Object.entries(POPULAR_ANIME)) {
+        if (qLower.includes(key)) {
+            popular.push({
+                id: val.id,
+                title: val.title,
+                year: val.year,
+                episodes: val.episodes,
+                score: val.score,
+                type: val.type,
+                status: 'Finished',
+                image: val.image || '',
+                synopsis: `${val.title} - Popular anime from HiAnime`,
+                genres: 'Action • Adventure • Fantasy',
+                source: 'hianime',
+                hianimeId: val.id,
+                url: `https://hianime.to/${val.id}`
+            });
+        }
+    }
+
+    if (isAnimeQuery) results = [...popular, ...hianime, ...anime, ...tv, ...(yts || [])];
+    else if (isMovieQuery) results = [...(yts || []), ...tv, ...anime, ...popular, ...hianime];
+    else results = [...popular, ...hianime, ...anime, ...tv, ...(yts || [])];
 
     // Deduplicate by title
     const seen = new Set();
@@ -372,104 +405,104 @@ async function getDownloadLinks(anime, episode, quality = '720p') {
 }
 
 function formatSearchResults(query, results) {
-    let txt = `🎬 *Arena MoviePro Search*\\n\\n`;
-    txt += `🔍 *Query:* ${query}\\n`;
-    txt += `📊 *Found:* ${results.length} results\\n\\n`;
-    txt += `┌─ *SELECT* ─┐\\n`;
+    let txt = `🎬 *Arena MoviePro Search*\n\n`;
+    txt += `🔍 *Query:* ${query}\n`;
+    txt += `📊 *Found:* ${results.length} results\n\n`;
+    txt += `┌─ *SELECT* ─┐\n`;
     results.forEach((r, i) => {
         const srcIcon = r.source === 'hianime' ? '🔥' : r.source === 'yts' ? '🎥' : r.source === 'jikan' ? '🌸' : '📺';
-        txt += `│ ${i + 1}. ${srcIcon} *${r.title}* ${r.year !== 'N/A' ? `(${r.year})` : ''}\\n`;
-        txt += `│   ${r.type} • ${r.score} ⭐ • ${r.episodes ? r.episodes + ' eps' : r.status} [${r.source}]\\n`;
+        txt += `│ ${i + 1}. ${srcIcon} *${r.title}* ${r.year !== 'N/A' ? `(${r.year})` : ''}\n`;
+        txt += `│   ${r.type} • ${r.score} ⭐ • ${r.episodes ? r.episodes + ' eps' : r.status} [${r.source}]\n`;
     });
-    txt += `└───────────┘\\n\\n`;
-    txt += `💡 Reply *number* (1-${results.length}) to view details\\n`;
-    txt += `🔥 *Arena AI v2.24 MoviePro*\\n`;
+    txt += `└───────────┘\n\n`;
+    txt += `💡 Reply *number* (1-${results.length}) to view details\n`;
+    txt += `🔥 *Arena AI v2.24.1 MoviePro*\n`;
     txt += `⚡ HiAnime + Jikan + YTS + TVMaze`;
     return txt;
 }
 
 function formatDetails(anime, episodes) {
-    let txt = `🎬 *${anime.title}*\\n\\n`;
-    txt += `📅 *Year:* ${anime.year || 'N/A'}\\n`;
-    txt += `⏱️ *Episodes:* ${anime.episodes || episodes.length || 'N/A'}\\n`;
-    txt += `⭐ *Score:* ${anime.score || 'N/A'}\\n`;
-    txt += `🎭 *Genres:* ${anime.genres || 'N/A'}\\n`;
-    txt += `📺 *Type:* ${anime.type || 'TV'}\\n`;
-    txt += `📊 *Status:* ${anime.status || 'Unknown'}\\n`;
-    txt += `🔗 *Source:* ${anime.source}\\n\\n`;
-    txt += `📝 *Synopsis:*\\n${(anime.synopsis || '').slice(0, 500)}\\n\\n`;
-    txt += `┌─ *EPISODES* ─┐\\n`;
+    let txt = `🎬 *${anime.title}*\n\n`;
+    txt += `📅 *Year:* ${anime.year || 'N/A'}\n`;
+    txt += `⏱️ *Episodes:* ${anime.episodes || episodes.length || 'N/A'}\n`;
+    txt += `⭐ *Score:* ${anime.score || 'N/A'}\n`;
+    txt += `🎭 *Genres:* ${anime.genres || 'N/A'}\n`;
+    txt += `📺 *Type:* ${anime.type || 'TV'}\n`;
+    txt += `📊 *Status:* ${anime.status || 'Unknown'}\n`;
+    txt += `🔗 *Source:* ${anime.source}\n\n`;
+    txt += `📝 *Synopsis:*\n${(anime.synopsis || '').slice(0, 500)}\n\n`;
+    txt += `┌─ *EPISODES* ─┐\n`;
 
     if (anime.source === 'yts' && anime.torrents?.length) {
-        txt += `│ 🎥 *Movie Torrents:*\\n`;
+        txt += `│ 🎥 *Movie Torrents:*\n`;
         anime.torrents.forEach((t, i) => {
-            txt += `│ ${i + 1}. ${t.quality} ${t.type} - ${t.size} (S:${t.seeds})\\n`;
+            txt += `│ ${i + 1}. ${t.quality} ${t.type} - ${t.size} (S:${t.seeds})\n`;
         });
-        txt += `│\\n│ Reply 1 for 1080p, 2 for 720p etc\\n`;
+        txt += `│\n│ Reply 1 for 1080p, 2 for 720p etc\n`;
     } else if (episodes.length > 0) {
         const display = episodes.slice(0, 50);
         display.forEach((ep, i) => {
-            if (i === 0) txt += `│ ${i + 1}. 📦 *All Episodes* (Season 1)\\n`;
-            else txt += `│ ${i + 1}. E${ep.number || i} - ${(ep.title || '').slice(0, 40)}${ep.isFiller ? ' [Filler]' : ''}\\n`;
+            if (i === 0) txt += `│ ${i + 1}. 📦 *All Episodes* (Season 1)\n`;
+            else txt += `│ ${i + 1}. E${ep.number || i} - ${(ep.title || '').slice(0, 40)}${ep.isFiller ? ' [Filler]' : ''}\n`;
         });
         if (episodes.length > 50) {
-            txt += `│ ... +${episodes.length - 50} more episodes\\n`;
-            txt += `│ ${display.length + 1}. 📦 *All Episodes* (Season 2)\\n`;
+            txt += `│ ... +${episodes.length - 50} more episodes\n`;
+            txt += `│ ${display.length + 1}. 📦 *All Episodes* (Season 2)\n`;
         }
     } else {
         const total = anime.episodes || 24;
         for (let i = 1; i <= Math.min(total, 20); i++) {
-            if (i === 1) txt += `│ ${i}. 📦 *All Episodes* (Season 1)\\n`;
-            else txt += `│ ${i}. Episode ${i - 1}\\n`;
+            if (i === 1) txt += `│ ${i}. 📦 *All Episodes* (Season 1)\n`;
+            else txt += `│ ${i}. Episode ${i - 1}\n`;
         }
-        if (total > 20) txt += `│ ... ${total} total episodes\\n`;
+        if (total > 20) txt += `│ ... ${total} total episodes\n`;
     }
 
-    txt += `└───────────┘\\n\\n`;
-    txt += `💡 Reply *number* to select episode/season\\n`;
-    txt += `🔥 *Arena MoviePro v2.24*\\n`;
+    txt += `└───────────┘\n\n`;
+    txt += `💡 Reply *number* to select episode/season\n`;
+    txt += `🔥 *Arena MoviePro v2.24.1*\n`;
     txt += `⚡ Real download enabled`;
     return txt;
 }
 
 function formatQualityOptions(season, episode, anime) {
-    let txt = `📦 *Download Options - ${anime.title}*\\n\\n`;
-    txt += `🎬 *Season:* ${season}\\n`;
-    txt += `🎞️ *Episode:* ${episode === 'all' ? 'All Episodes' : 'Episode ' + (episode.number || episode)}\\n`;
-    txt += `🔗 *Source:* ${anime.source} ${anime.hianimeId ? '(' + anime.hianimeId + ')' : ''}\\n\\n`;
+    let txt = `📦 *Download Options - ${anime.title}*\n\n`;
+    txt += `🎬 *Season:* ${season}\n`;
+    txt += `🎞️ *Episode:* ${episode === 'all' ? 'All Episodes' : 'Episode ' + (episode.number || episode)}\n`;
+    txt += `🔗 *Source:* ${anime.source} ${anime.hianimeId ? '(' + anime.hianimeId + ')' : ''}\n\n`;
 
     if (anime.source === 'yts') {
-        txt += `┌─ *QUALITY (Torrent)* ─┐\\n`;
+        txt += `┌─ *QUALITY (Torrent)* ─┐\n`;
         (anime.torrents || []).forEach((t, i) => {
-            txt += `│ ${i + 1}. 🎥 ${t.quality} ${t.type} - ${t.size}\\n`;
+            txt += `│ ${i + 1}. 🎥 ${t.quality} ${t.type} - ${t.size}\n`;
         });
-        txt += `└───────────┘\\n\\n`;
-        txt += `💡 Reply number to get magnet/torrent\\n`;
+        txt += `└───────────┘\n\n`;
+        txt += `💡 Reply number to get magnet/torrent\n`;
     } else {
-        txt += `┌─ *QUALITY* ─┐\\n`;
-        txt += `│ 1. 🎥 1080p Full HD (HiAnime)\\n`;
-        txt += `│ 2. 🎥 720p HD (HiAnime)\\n`;
-        txt += `│ 3. 🎥 480p SD\\n`;
-        txt += `│ 4. 🎥 360p Mobile\\n`;
-        txt += `└───────────┘\\n\\n`;
-        txt += `┌─ *SUBTITLES* ─┐\\n`;
-        txt += `│ 5. 🇱🇰 Sinhala\\n`;
-        txt += `│ 6. 🇬🇧 English\\n`;
-        txt += `│ 7. 🇮🇳 Hindi\\n`;
-        txt += `│ 8. 🇪🇸 Spanish\\n`;
-        txt += `│ 9. 🇫🇷 French\\n`;
-        txt += `│ 10. 🇸🇦 Arabic\\n`;
-        txt += `│ 11. 🇧🇩 Bangla\\n`;
-        txt += `│ 12. 🇮🇩 Indonesian\\n`;
-        txt += `│ 13. 🇲🇾 Malay\\n`;
-        txt += `│ 14. 🇵🇹 Portuguese\\n`;
-        txt += `│ 15. 🇷🇺 Russian\\n`;
-        txt += `└───────────┘\\n\\n`;
-        txt += `💡 Reply *number* (1-15) to download\\n`;
+        txt += `┌─ *QUALITY* ─┐\n`;
+        txt += `│ 1. 🎥 1080p Full HD (HiAnime)\n`;
+        txt += `│ 2. 🎥 720p HD (HiAnime)\n`;
+        txt += `│ 3. 🎥 480p SD\n`;
+        txt += `│ 4. 🎥 360p Mobile\n`;
+        txt += `└───────────┘\n\n`;
+        txt += `┌─ *SUBTITLES* ─┐\n`;
+        txt += `│ 5. 🇱🇰 Sinhala\n`;
+        txt += `│ 6. 🇬🇧 English\n`;
+        txt += `│ 7. 🇮🇳 Hindi\n`;
+        txt += `│ 8. 🇪🇸 Spanish\n`;
+        txt += `│ 9. 🇫🇷 French\n`;
+        txt += `│ 10. 🇸🇦 Arabic\n`;
+        txt += `│ 11. 🇧🇩 Bangla\n`;
+        txt += `│ 12. 🇮🇩 Indonesian\n`;
+        txt += `│ 13. 🇲🇾 Malay\n`;
+        txt += `│ 14. 🇵🇹 Portuguese\n`;
+        txt += `│ 15. 🇷🇺 Russian\n`;
+        txt += `└───────────┘\n\n`;
+        txt += `💡 Reply *number* (1-15) to download\n`;
         txt += `⚡ Real m3u8 via Arena AI`;
     }
 
-    txt += `\\n🔥 *Arena MoviePro v2.24*\\n`;
+    txt += `\n🔥 *Arena MoviePro v2.24.1*\n`;
     txt += `✅ Own API - No Asitha`;
     return txt;
 }

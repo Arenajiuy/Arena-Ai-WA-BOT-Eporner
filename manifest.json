@@ -1,0 +1,31 @@
+{
+  "version": "2.23.1",
+  "notes": "v2.23.1 FIX MoviePro number reply bug: Fixed menuState converting numbers to .menu when moviepro cache exists (now checks moviepro.cache, detailCache, qualityCache), added try/catch in handleMovieProQuality/Detail, added 51 as Season 2 All (from screenshot 51. All Episodes Season 2), improved episode index handling (num 2 = E1), added fallback via cache.values(), fixed formatQualityOptions 3 params. Plus v2.23 OWN API (no Asitha), v2.22 MoviePro, v2.21 Anti-Bug, etc",
+  "files": [
+    "bot.js",
+    "ai.js",
+    "downloader.js",
+    "resolvers.js",
+    "updater.js",
+    "launcher.js",
+    "package.json",
+    "termux-setup.sh",
+    "test.js",
+    "README-SI.txt",
+    "manifest.json",
+    ".gitignore",
+    "index.js",
+    "net.js",
+    "guard.js",
+    "banner.jpg",
+    "media.js",
+    "features.js",
+    "tools.js",
+    "eporner.js",
+    "apify.js",
+    "mirror.js",
+    "relay.js",
+    "antibug.js",
+    "moviepro.js"
+  ]
+}

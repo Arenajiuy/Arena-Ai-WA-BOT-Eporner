@@ -1,0 +1,11 @@
+node_modules/
+auth/
+settings.json
+.version.json
+.backup/
+package-lock.json
+logo.img
+.announce-next
+bin/
+agent-msg.txt
+agent-msg.txt.sending

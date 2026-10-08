@@ -1,6 +1,6 @@
 {
-  "version": "2.23.1",
-  "notes": "v2.23.1 FIX MoviePro number reply bug: Fixed menuState converting numbers to .menu when moviepro cache exists (now checks moviepro.cache, detailCache, qualityCache), added try/catch in handleMovieProQuality/Detail, added 51 as Season 2 All (from screenshot 51. All Episodes Season 2), improved episode index handling (num 2 = E1), added fallback via cache.values(), fixed formatQualityOptions 3 params. Plus v2.23 OWN API (no Asitha), v2.22 MoviePro, v2.21 Anti-Bug, etc",
+  "version": "2.24.0",
+  "notes": "v2.24 REAL DOWNLOAD FIX: Fixed trailer-only bug (Black Clover etc only sent trailer). Now real anime download via HiAnime (aniwatch package self-hosted scraper) + yt-dlp m3u8 -> mp4, YTS movie search via yts.am API with torrent/magnet, quality selection 1080p/720p/480p/360p + subtitles, direct video send. Fallback to trailer if blocked, proxy support via .setproxy. Plus v2.23.1 number reply fix, v2.23 own API, etc",
   "files": [
     "bot.js",
     "ai.js",

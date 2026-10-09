@@ -1,6 +1,6 @@
 {
-  "version": "2.24.1",
-  "notes": "v2.24.1 FIX \\n bug: Fixed literal \\n showing in messages (Black Clover details showed \\n instead of newline) - replaced double escaped \\\\n with single \\n in formatSearchResults, formatDetails, formatQualityOptions. Plus improved anime search priority (Jikan over TVMaze for anime queries), added hardcoded popular anime fallback (Black Clover etc). Real download via HiAnime + YTS remains.",
+  "version": "2.24.2",
+  "notes": "v2.24.2 + .report command: Single report (not 50) - .report 9476xxxxxxx [reason] -> blocks number via Baileys updateBlockStatus, logs to reports.json, confirmation with timestamp. Prevents ban from mass reporting. Plus v2.24.1 \\n bug fix, v2.24.0 real download.",
   "files": [
     "bot.js",
     "ai.js",

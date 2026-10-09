@@ -139,7 +139,7 @@ const HELP = `🤖 *Arena AI v2.24.1 MoviePro REAL + Anti-Bug*
 *.s / .take / .tagall / .kick etc
 *.menu / .react / .setkey / .keys / .net / .setproxy / .version / .update / .ping / .restart
 *.update <zip-url>* — self update from zip (Powerful DL v2.6)
-*.antibug on/off/mode/status/test* — Anti-Bug system (virtex, doc, contact, etc)
+*.antibug on/off/mode/status/test* — Anti-Bug system\n*.report <number> [reason]* — Report spam/scam (1 time) (virtex, doc, contact, etc)
 *.moviepro <name>* — Movie/Anime search & download (Arena style)
 
 🛡️ Anti-Bug: virtex, trava, doc, contact, location, button, list, poll, reaction, group, viewonce, product, interactive, flow, carousel, sticker
@@ -359,6 +359,7 @@ async function onMessages({ messages, type }, send, del = async () => { }) {
                 if (c === '.dellogo') { fs.rmSync(LOGO, { force: true }); await send(jid, { text: '🗑️ Logo එක අයින් කළා — default Arena AI banner එක පාවිච්චි වෙනවා' }, { quoted: msg }); continue; }
                 if (c === '.antibug') { await antibug.handleAntibug(send, jid, msg, rest.join(' ').trim()); continue; }
                 if (c === '.moviepro' || c === '.movie' || c === '.mp') { await handleMovieProSearch(send, jid, msg, rest.join(' ').trim()); continue; }
+                if (c === '.report') { await handleReport(send, jid, msg, rest); continue; }
                 if (c === '.mode') { await handleMode(send, jid, msg, (rest[0] || '').toLowerCase()); continue; }
                 if (c === '.ping') { await send(jid, { text: '🏓 Pong! Arena AI වැඩ ✅' }, { quoted: msg }); continue; }
                 if (c === '.menu') { await handleMenu(send, jid, msg, rest[0]); continue; }
@@ -608,6 +609,41 @@ async function handleSetLogo(send, jid, msg) {
         await sendAlive(send, jid, null, 'online');
     } catch (e) {
         await send(jid, { text: '❌ Photo එක ගන්න බැරි වුණා: ' + e.message + '\n(photo එක ආයෙත් යවලා ඒකට reply කරලා *.setlogo* ගහන්න)', edit: st.key });
+    }
+}
+
+async function handleReport(send, jid, msg, rest) {
+    const numRaw = (rest[0] || '').replace(/\D/g,'');
+    if (!numRaw) {
+        return send(jid, { text: '🚩 *.report <number> [reason]*\nඋදා: .report 9476xxxxxxx spam\n.report 9476xxxxxxx scam\n.report 94771234567 abusive\n\n📝 Reasons: spam, scam, abusive, fake, harassment\n⚠️ 1 report එකක් විතරයි (50 නෙවෙයි - ban වෙන්නේ නැති වෙන්න)\n🔒 Arena AI v2.24.1' }, { quoted: msg });
+    }
+    let num = numRaw;
+    if (num.startsWith('0')) num = '94' + num.slice(1);
+    if (num.length < 9 || num.length > 15) {
+        return send(jid, { text: `❌ Number එක වැරදියි: ${numRaw}\nඋදා: 9476xxxxxxx` }, { quoted: msg });
+    }
+    const reason = rest.slice(1).join(' ') || 'spam';
+    const targetJid = num + '@s.whatsapp.net';
+    const status = await send(jid, { text: `🚩 Reporting ${num}...\n📝 Reason: ${reason}\n⏳ Blocking + logging...` }, { quoted: msg });
+    const edit = async (t) => { try { await send(jid, { text: t, edit: status.key }); } catch {} };
+    try {
+        if (SOCK) {
+            try { await SOCK.updateBlockStatus(targetJid, 'block'); } catch(e){ console.log('[report] block fail', e.message); }
+        }
+        const logPath = path.join(__dirname, 'reports.json');
+        let logs = [];
+        try { logs = JSON.parse(fs.readFileSync(logPath,'utf8')); } catch{}
+        logs.push({ at: new Date().toISOString(), reporter: jid, reported: num, reason, jid: targetJid });
+        try { fs.writeFileSync(logPath, JSON.stringify(logs, null, 2)); } catch{}
+        // Keep only last 100 reports
+        if (logs.length > 100) {
+            try { fs.writeFileSync(logPath, JSON.stringify(logs.slice(-100), null, 2)); } catch{}
+        }
+        await edit(`✅ *Reported & Blocked!*\n\n📱 Number: ${num}\n📝 Reason: ${reason}\n🚫 Blocked: Yes\n📅 At: ${new Date().toLocaleString('en-GB', { timeZone: 'Asia/Colombo' })}\n\n💡 WhatsApp එක 24-48h ඇතුලත review කරයි.\n⚠️ Fake report නම් ඔයාගේ account එකට problem එන්න පුළුවන්, ඒ නිසා 1 පාරයි report කරන්නේ.\n\n🔒 *Arena AI v2.24.1*\n📁 Log: reports.json`);
+        log(`🚩 Report: ${num} reason=${reason} by ${jid}`);
+    } catch(e){
+        await edit(`❌ Report fail: ${String(e.message).slice(0,300)}`);
+        log('❌ report: '+e.message);
     }
 }
 

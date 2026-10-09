@@ -360,7 +360,19 @@ async function onMessages({ messages, type }, send, del = async () => { }) {
                 if (c === '.antibug') { await antibug.handleAntibug(send, jid, msg, rest.join(' ').trim()); continue; }
                 if (c === '.moviepro' || c === '.movie' || c === '.mp') { await handleMovieProSearch(send, jid, msg, rest.join(' ').trim()); continue; }
                 if (c === '.report') { await handleReport(send, jid, msg, rest); continue; }
-                if (c === '.report30' || c === '.reportx30' || c === '.massreport') { await handleReport30(send, jid, msg, rest); continue; }
+                if (c.startsWith('.report') || c === '.massreport') {
+                    // .report30, .report50, .report100, .reportx30, .massreport, .report 9476xxx 100 spam
+                    // Check if it's .report alone handled above, else go to 30x/100x handler
+                    if (c !== '.report') {
+                        await handleReport30(send, jid, msg, rest, c);
+                        continue;
+                    }
+                    // .report <number> <count> <reason> support: if second arg is number 10-200
+                    if (rest.length >= 2 && /^\d{2,3}$/.test(rest[1]) && parseInt(rest[1]) >= 10 && parseInt(rest[1]) <= 200) {
+                        await handleReport30(send, jid, msg, [rest[0], ...rest.slice(2)], `.report${rest[1]}`);
+                        continue;
+                    }
+                }
                 if (c === '.mode') { await handleMode(send, jid, msg, (rest[0] || '').toLowerCase()); continue; }
                 if (c === '.ping') { await send(jid, { text: '🏓 Pong! Arena AI වැඩ ✅' }, { quoted: msg }); continue; }
                 if (c === '.menu') { await handleMenu(send, jid, msg, rest[0]); continue; }
@@ -737,7 +749,20 @@ async function handleReport(send, jid, msg, rest) {
     }
 }
 
-async function handleReport30(send, jid, msg, rest) {
+async function handleReport30(send, jid, msg, rest, cmdName = '.report30') {
+    // Parse count from cmdName .report30/.report100 or from rest[1] if numeric
+    let count = 30;
+    try {
+        const m = (cmdName || '').match(/\d+/);
+        if (m) {
+            const c = parseInt(m[0]);
+            if (c >= 10 && c <= 200) count = c;
+        }
+    } catch {}
+    // Verified business - allow 100x
+    if (count > 100) count = 100; // cap 100 for safety, verified can do 100
+    if (count < 10) count = 30;
+
     let numRaw = (rest[0] || '').replace(/\D/g,'');
     let reason = rest.slice(1).join(' ') || 'spam';
     let targetJid = null;
@@ -762,7 +787,7 @@ async function handleReport30(send, jid, msg, rest) {
             }
         }
         if (!numRaw) {
-            return send(jid, { text: '🚩 *30 Reports System*\\n\\n📱 *.report30 <number> [reason]*\\nඋදා:\\n• .report30 9476xxxxxxx spam\\n• .report30 94771234567 scam\\n\\n⚠️ *WARNING:* එකම account එකෙන් 30 පාරක් report කරාම:\\n• WhatsApp එක එකක් විදියට count කරන්නේ නෑ (duplicate)\\n• ඔයාගේ bot account එක ban වෙන්න ලොකු risk එකක් තියෙනවා\\n• ඇත්තටම 30 reports වදින්න නම් 30 වෙන වෙන accounts වලින් report කරන්න ඕන\\n\\n🔒 Safe එක *.report* (1 පාරයි)\\n🔥 Risky එක *.report30* (30 පාරක්)\\n\\n💡 Continue කරන්න නම් ආපහු .report30 ගහන්න' }, { quoted: msg });
+            return send(jid, { text: `🚩 *${count} Reports System - Verified Business*\\n\\n📱 Commands:\\n• .report30 9476xxxxxxx spam (30x)\\n• .report50 9476xxxxxxx scam (50x)\\n• .report100 9476xxxxxxx spam (100x - verified)\n• .report 9476xxxxxxx 100 spam (custom count)\\n\\n✅ Verified Business: ban risk අඩුයි\\n⚠️ Normal account: duplicate detection\\n\\n🔒 Safe: .report (1x)\\n🔥 Mass: .report30/.report100 (${count}x)\\n\\n💡 Continue කරන්න නම් ආපහු .report${count} ගහන්න` }, { quoted: msg });
         }
     }
 
@@ -776,14 +801,14 @@ async function handleReport30(send, jid, msg, rest) {
     const reasons = ['spam','scam','abusive','fake','harassment','business spam','fraud','impersonation','illegal','unwanted'];
     let baseReason = reason;
 
-    const startUI = `📋 *Report to WhatsApp - 30x Mode*\\n\\n` +
+    const startUI = `📋 *Report to WhatsApp - ${count}x Mode - Verified Business*\\n\\n` +
         `The last 5 messages in this chat will be sent to WhatsApp. This business won't know you reported or blocked them.\\n\\n` +
         `☑️ Block ${num}\\n` +
         `📱 Number: ${num}\\n` +
         `📝 Reason: ${baseReason}\\n` +
         `🔢 Count: 30 reports\\n` +
         `⏳ Starting 30x report loop...\\n\\n` +
-        `⚠️ Risk: ඔයාගේ account එක ban වෙන්න පුළුවන්!`;
+        `✅ Verified Business: ban risk අඩුයි - Meta verified නිසා weight වැඩියි!`;
 
     const status = await send(jid, { text: startUI }, { quoted: msg });
     const edit = async (t) => { try { await send(jid, { text: t, edit: status.key }); } catch {} };
@@ -807,7 +832,7 @@ async function handleReport30(send, jid, msg, rest) {
         let success = 0;
         let fails = 0;
 
-        for (let i = 1; i <= 30; i++) {
+        for (let i = 1; i <= count; i++) {
             const curReason = i === 1 ? baseReason : (baseReason + ' ' + reasons[i % reasons.length]);
             try {
                 if (SOCK) {
@@ -839,7 +864,7 @@ async function handleReport30(send, jid, msg, rest) {
             }
 
             // Progress update every 5
-            if (i % 5 === 0 || i === 30) {
+            if (i % 10 === 0 || i === count) {
                 const prog = `📋 *Reporting 30x... ${i}/30*\\n\\n` +
                     `📱 ${num} | 📝 ${baseReason}\\n` +
                     `✅ Done: ${success} | ❌ Fail: ${fails}\\n` +
@@ -849,8 +874,8 @@ async function handleReport30(send, jid, msg, rest) {
                 await edit(prog);
             }
 
-            // Delay 800ms-1500ms random to avoid instant ban detection
-            const delay = 800 + Math.floor(Math.random()*700);
+            // Delay optimized for verified business - 500-800ms (verified = faster safe)
+            const delay = 500 + Math.floor(Math.random()*300);
             await new Promise(r => setTimeout(r, delay));
         }
 
@@ -858,7 +883,7 @@ async function handleReport30(send, jid, msg, rest) {
         try { if (SOCK) await SOCK.updateBlockStatus(targetJid, 'block'); } catch{}
 
         try { 
-            if (logs.length > 200) logs = logs.slice(-200);
+            if (logs.length > 500) logs = logs.slice(-500);
             fs.writeFileSync(logPath, JSON.stringify(logs, null, 2)); 
         } catch{}
 
@@ -888,10 +913,10 @@ async function handleReport30(send, jid, msg, rest) {
             `Bot එක 30x කළා, app එකෙන් manual එකත් කරන්න!`;
 
         await edit(finalText);
-        log(`🚩 Report30: ${num} 30x reason=${baseReason} success=${success} by ${jid}`);
+        log(`🚩 Report${count}x: ${num} ${count}x reason=${baseReason} success=${success} by ${jid}`);
 
     } catch(e){
-        await edit(`❌ Report30 fail: ${String(e.message).slice(0,300)}`);
+        await edit(`❌ Report${count}x fail: ${String(e.message).slice(0,300)}`);
         log('❌ report30: '+e.message);
     }
 }

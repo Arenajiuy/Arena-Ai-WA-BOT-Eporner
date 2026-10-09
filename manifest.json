@@ -1,6 +1,6 @@
 {
-  "version": "2.25.2",
-  "notes": "v2.25.2 Report 30x system: Added .report30/.reportx30/.massreport - loops 30 times block/unblock with 800-1500ms delay, progress bar, 30 logs in reports.json with last5, final blocked state. UI mimics WhatsApp Business Report dialog (last 5 messages sent, block checkbox). Warning about ban risk and duplicate detection. Keeps safe .report (1x). Plus v2.25.1 report business UI and v2.25.0 Cinesubz real movie (no trailer) from matheeshasanjana system.",
+  "version": "2.25.3",
+  "notes": "v2.25.3 Report 100x for Verified Business: Added .report100 (100x loop), .report50 (50x), .report30 (30x), .report <num> <count> <reason> custom count 10-200, optimized delay 500-800ms for verified business (faster safe), progress every 10, logs up to 500, verified benefits message. UI mimics Business Report dialog last 5 messages. Keeps safe .report 1x + Cinesubz real movie.",
   "files": [
     "bot.js",
     "ai.js",

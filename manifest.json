@@ -1,6 +1,6 @@
 {
-  "version": "2.25.3",
-  "notes": "v2.25.3 Report 100x for Verified Business: Added .report100 (100x loop), .report50 (50x), .report30 (30x), .report <num> <count> <reason> custom count 10-200, optimized delay 500-800ms for verified business (faster safe), progress every 10, logs up to 500, verified benefits message. UI mimics Business Report dialog last 5 messages. Keeps safe .report 1x + Cinesubz real movie.",
+  "version": "2.26.0",
+  "notes": "v2.26.0 REAL REPORT like video: Fixed report system to mimic video exactly - Block my no? dialog -> Report to WhatsApp checkbox -> Block -> Please wait a moment -> my no has been blocked -> Reporting... Please wait a moment -> Thank you for reporting -> my no has been unblocked loop. Added attemptRealReport() with 5 IQ methods (spam, abuse XEP-0161, report, blocklist+report, spam+messages with last5). Each loop does real report IQ + block/unblock, shows Reporting... and Thank you for reporting toast like video. Supports .report100 (100x), .report50, .report30, custom count 10-200, verified business optimized 600ms delay, progress every 10, logs 500 with realReport results.",
   "files": [
     "bot.js",
     "ai.js",

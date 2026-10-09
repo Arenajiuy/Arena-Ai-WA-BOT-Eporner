@@ -1,6 +1,6 @@
 {
   "name": "arena-ai",
-  "version": "2.26.0",
+  "version": "2.26.1",
   "description": "Arena AI - private WhatsApp bot: .ai (Gemini/Groq) + .download",
   "main": "index.js",
   "scripts": {

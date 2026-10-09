@@ -1,6 +1,6 @@
 {
-  "version": "2.26.0",
-  "notes": "v2.26.0 REAL REPORT like video: Fixed report system to mimic video exactly - Block my no? dialog -> Report to WhatsApp checkbox -> Block -> Please wait a moment -> my no has been blocked -> Reporting... Please wait a moment -> Thank you for reporting -> my no has been unblocked loop. Added attemptRealReport() with 5 IQ methods (spam, abuse XEP-0161, report, blocklist+report, spam+messages with last5). Each loop does real report IQ + block/unblock, shows Reporting... and Thank you for reporting toast like video. Supports .report100 (100x), .report50, .report30, custom count 10-200, verified business optimized 600ms delay, progress every 10, logs 500 with realReport results.",
+  "version": "2.26.1",
+  "notes": "v2.26.1 CLEAN - Removed mass report .report30/.report100/.massreport and ban tools. Keeps only safe .report 1x (Business Account UI like screenshots: Report to WhatsApp dialog, last 5 messages sent, block checkbox, reports.json log). Plus Cinesubz real movie (no trailer) from matheeshasanjana system. No ban features.",
   "files": [
     "bot.js",
     "ai.js",

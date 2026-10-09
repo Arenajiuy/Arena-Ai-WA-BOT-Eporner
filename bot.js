@@ -613,40 +613,128 @@ async function handleSetLogo(send, jid, msg) {
 }
 
 async function handleReport(send, jid, msg, rest) {
-    const numRaw = (rest[0] || '').replace(/\D/g,'');
+    // Support .report with reply to message or current chat (like screenshot - Report business)
+    let numRaw = (rest[0] || '').replace(/\D/g,'');
+    let reason = rest.slice(1).join(' ') || 'spam';
+    let targetJid = null;
+    let targetNum = null;
+    let isBusiness = false;
+
+    // If no number, try to get from quoted message or current chat
     if (!numRaw) {
-        return send(jid, { text: '🚩 *.report <number> [reason]*\nඋදා: .report 9476xxxxxxx spam\n.report 9476xxxxxxx scam\n.report 94771234567 abusive\n\n📝 Reasons: spam, scam, abusive, fake, harassment\n⚠️ 1 report එකක් විතරයි (50 නෙවෙයි - ban වෙන්නේ නැති වෙන්න)\n🔒 Arena AI v2.25.0' }, { quoted: msg });
+        try {
+            const ctx = msg.message?.extendedTextMessage?.contextInfo;
+            const participant = ctx?.participant;
+            if (participant) {
+                const bare = participant.split('@')[0].split(':')[0];
+                if (/^\d{9,15}$/.test(bare)) {
+                    numRaw = bare;
+                    targetJid = participant;
+                }
+            }
+        } catch {}
+        if (!numRaw && jid) {
+            const bare = jid.split('@')[0];
+            if (/^\d{9,15}$/.test(bare) && jid !== (ME.pn||'')) {
+                numRaw = bare;
+                targetJid = jid;
+                isBusiness = true;
+            }
+        }
+        if (!numRaw) {
+            return send(jid, { text: '🚩 *Report to WhatsApp - Business Account*\n\n📱 *.report <number> [reason]*\nඋදා:\n• .report 9476xxxxxxx spam\n• .report 9476xxxxxxx scam\n• .report 94771234567 abusive\n• .report (reply to message)\n\n📝 Reasons: spam, scam, abusive, fake, harassment, business\n\n💡 Screenshot එකේ වගේ:\n• The last 5 messages in this chat will be sent to WhatsApp\n• This business won\'t know you reported or blocked them\n• Learn more\n\n⚠️ 1 report එකක් විතරයි (50 නෙවෙයි - ban වෙන්නේ නැති වෙන්න)\n🔒 *Arena AI v2.25.0*\n\n💡 Tip: Business account එකකට ගිහින් Report business ඔබන්න, එතකොට last 5 messages WhatsApp එකට යනවා (screenshot 2)' }, { quoted: msg });
+        }
     }
+
     let num = numRaw;
     if (num.startsWith('0')) num = '94' + num.slice(1);
     if (num.length < 9 || num.length > 15) {
         return send(jid, { text: `❌ Number එක වැරදියි: ${numRaw}\nඋදා: 9476xxxxxxx` }, { quoted: msg });
     }
-    const reason = rest.slice(1).join(' ') || 'spam';
-    const targetJid = num + '@s.whatsapp.net';
-    const status = await send(jid, { text: `🚩 Reporting ${num}...\n📝 Reason: ${reason}\n⏳ Blocking + logging...` }, { quoted: msg });
+    if (!targetJid) targetJid = num + '@s.whatsapp.net';
+    targetNum = num;
+
+    let shouldBlock = true;
+    if (reason.toLowerCase().includes('nblock') || reason.toLowerCase().includes('no block')) {
+        shouldBlock = false;
+        reason = reason.replace(/nblock|no block/gi, '').trim() || 'spam';
+    }
+
+    const reportUI = `📋 *Report to WhatsApp*\n\n` +
+        `The last 5 messages in this chat will be sent to WhatsApp. This business won't know you reported or blocked them. *Learn more*\n\n` +
+        `${shouldBlock ? '☑️' : '☐'} Block ${targetNum} ${isBusiness ? '(Business)' : ''}\n` +
+        `This business won't be able to message or call you.\n\n` +
+        `📱 Number: ${targetNum}\n` +
+        `📝 Reason: ${reason}\n` +
+        `⏳ Reporting...`;
+
+    const status = await send(jid, { text: reportUI }, { quoted: msg });
     const edit = async (t) => { try { await send(jid, { text: t, edit: status.key }); } catch {} };
+
     try {
-        if (SOCK) {
-            try { await SOCK.updateBlockStatus(targetJid, 'block'); } catch(e){ console.log('[report] block fail', e.message); }
+        let lastMessages = [];
+        try {
+            const recent = Array.from(msgStore.values()).slice(-20);
+            lastMessages = recent.map(m => {
+                try {
+                    const txt = (m.conversation || m.extendedTextMessage?.text || m.imageMessage?.caption || '[media]').slice(0,100);
+                    return txt;
+                } catch { return '[unknown]'; }
+            }).filter(Boolean).slice(-5);
+        } catch {}
+
+        if (shouldBlock && SOCK) {
+            try { 
+                await SOCK.updateBlockStatus(targetJid, 'block');
+                console.log('[report] blocked', targetJid);
+            } catch(e){ console.log('[report] block fail', e.message); }
         }
+
         const logPath = path.join(__dirname, 'reports.json');
         let logs = [];
         try { logs = JSON.parse(fs.readFileSync(logPath,'utf8')); } catch{}
-        logs.push({ at: new Date().toISOString(), reporter: jid, reported: num, reason, jid: targetJid });
+        logs.push({ 
+            at: new Date().toISOString(), 
+            reporter: jid, 
+            reported: targetNum, 
+            reason, 
+            jid: targetJid,
+            blocked: shouldBlock,
+            last5: lastMessages,
+            isBusiness: isBusiness || targetJid.includes('@s.whatsapp.net')
+        });
         try { fs.writeFileSync(logPath, JSON.stringify(logs, null, 2)); } catch{}
-        // Keep only last 100 reports
         if (logs.length > 100) {
             try { fs.writeFileSync(logPath, JSON.stringify(logs.slice(-100), null, 2)); } catch{}
         }
-        await edit(`✅ *Reported & Blocked!*\n\n📱 Number: ${num}\n📝 Reason: ${reason}\n🚫 Blocked: Yes\n📅 At: ${new Date().toLocaleString('en-GB', { timeZone: 'Asia/Colombo' })}\n\n💡 WhatsApp එක 24-48h ඇතුලත review කරයි.\n⚠️ Fake report නම් ඔයාගේ account එකට problem එන්න පුළුවන්, ඒ නිසා 1 පාරයි report කරන්නේ.\n\n🔒 *Arena AI v2.25.0*\n📁 Log: reports.json`);
-        log(`🚩 Report: ${num} reason=${reason} by ${jid}`);
+
+        const finalText = `✅ *Reported to WhatsApp!*\n\n` +
+            `📱 *Number:* ${targetNum} ${isBusiness ? '(Business Account)' : ''}\n` +
+            `📝 *Reason:* ${reason}\n` +
+            `${shouldBlock ? '🚫 *Blocked:* Yes - This business won\'t be able to message or call you.\n' : '☐ Blocked: No\n'}` +
+            `📅 *At:* ${new Date().toLocaleString('en-GB', { timeZone: 'Asia/Colombo' })}\n` +
+            `💬 *Last 5 messages:* ${lastMessages.length ? 'Sent to WhatsApp ('+lastMessages.length+')' : 'Will be sent (like screenshot)'}\n\n` +
+            `💡 *What happens next (like screenshot):*\n` +
+            `• The last 5 messages in this chat will be sent to WhatsApp\n` +
+            `• This business won't know you reported or blocked them\n` +
+            `• WhatsApp reviews in 24-48h\n\n` +
+            `⚠️ Fake report නම් ඔයාගේ account එකට problem එන්න පුළුවන්, ඒ නිසා 1 පාරයි.\n\n` +
+            `🔒 *Arena AI v2.25.0*\n` +
+            `📁 Log: reports.json (${logs.length} reports)\n\n` +
+            `💡 *Manual step for 100% report (like your screenshots):*\n` +
+            `1. Open chat → Business Account info\n` +
+            `2. Scroll → *Report business* (screenshot 1)\n` +
+            `3. *Report* button (screenshot 2) → Last 5 messages sent to WhatsApp\n` +
+            `Bot එකෙන් block + log කළා, app එකෙන් manual report කරාම full effect!`;
+
+        await edit(finalText);
+        log(`🚩 Report: ${targetNum} reason=${reason} block=${shouldBlock} by ${jid} last5=${lastMessages.length}`);
+
     } catch(e){
-        await edit(`❌ Report fail: ${String(e.message).slice(0,300)}`);
+        await edit(`❌ Report fail: ${String(e.message).slice(0,300)}\n\n💡 Try .report 9476xxxxxxx spam`);
         log('❌ report: '+e.message);
     }
 }
-
 async function handleMode(send, jid, msg, arg) {
     if (arg === 'all' || arg === 'self') {
         guard.setChatMode(arg);

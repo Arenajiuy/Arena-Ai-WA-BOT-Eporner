@@ -1,6 +1,6 @@
 {
-  "version": "2.25.0",
-  "notes": "v2.25 Cinesubz REAL MOVIE system from matheeshasanjana83-alt/abc: Integrated back.asitha.top/api/movie-requests (cinesubz source) for real movie files (no trailer). Added searchCinesubz, getCinesubzInfo, getCinesubzEpisodeInfo, unified search now includes cinesubz (movies priority), getEpisodes handles cinesubz tvshows, getDownloadLinks returns cinesubz downloads, handleMovieProDownload now downloads real movie via yt-dlp/media.js or downloader.js and sends as video/document (not trailer). Keeps HiAnime+YTS+Jikan+TVMaze. Plus .report single, \\n fix.",
+  "version": "2.25.1",
+  "notes": "v2.25.1 Report business system (like screenshots): Enhanced .report to mimic WhatsApp Business Report UI - shows \"Report to WhatsApp\" dialog, \"last 5 messages will be sent\", block checkbox, logs last5 from msgStore, blocks via updateBlockStatus, reports.json log. Supports .report <number> [reason], .report reply, and manual steps for full effect (Business Account info -> Report business -> Report button). Plus v2.25.0 Cinesubz real movie (no trailer) from matheeshasanjana system.",
   "files": [
     "bot.js",
     "ai.js",

@@ -1,6 +1,6 @@
 {
-  "version": "2.25.1",
-  "notes": "v2.25.1 Report business system (like screenshots): Enhanced .report to mimic WhatsApp Business Report UI - shows \"Report to WhatsApp\" dialog, \"last 5 messages will be sent\", block checkbox, logs last5 from msgStore, blocks via updateBlockStatus, reports.json log. Supports .report <number> [reason], .report reply, and manual steps for full effect (Business Account info -> Report business -> Report button). Plus v2.25.0 Cinesubz real movie (no trailer) from matheeshasanjana system.",
+  "version": "2.25.2",
+  "notes": "v2.25.2 Report 30x system: Added .report30/.reportx30/.massreport - loops 30 times block/unblock with 800-1500ms delay, progress bar, 30 logs in reports.json with last5, final blocked state. UI mimics WhatsApp Business Report dialog (last 5 messages sent, block checkbox). Warning about ban risk and duplicate detection. Keeps safe .report (1x). Plus v2.25.1 report business UI and v2.25.0 Cinesubz real movie (no trailer) from matheeshasanjana system.",
   "files": [
     "bot.js",
     "ai.js",

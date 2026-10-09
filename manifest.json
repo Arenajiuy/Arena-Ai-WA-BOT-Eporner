@@ -1,6 +1,6 @@
 {
-  "version": "2.24.2",
-  "notes": "v2.24.2 + .report command: Single report (not 50) - .report 9476xxxxxxx [reason] -> blocks number via Baileys updateBlockStatus, logs to reports.json, confirmation with timestamp. Prevents ban from mass reporting. Plus v2.24.1 \\n bug fix, v2.24.0 real download.",
+  "version": "2.25.0",
+  "notes": "v2.25 Cinesubz REAL MOVIE system from matheeshasanjana83-alt/abc: Integrated back.asitha.top/api/movie-requests (cinesubz source) for real movie files (no trailer). Added searchCinesubz, getCinesubzInfo, getCinesubzEpisodeInfo, unified search now includes cinesubz (movies priority), getEpisodes handles cinesubz tvshows, getDownloadLinks returns cinesubz downloads, handleMovieProDownload now downloads real movie via yt-dlp/media.js or downloader.js and sends as video/document (not trailer). Keeps HiAnime+YTS+Jikan+TVMaze. Plus .report single, \\n fix.",
   "files": [
     "bot.js",
     "ai.js",

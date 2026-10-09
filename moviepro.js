@@ -1,11 +1,11 @@
 /**
- * moviepro.js — Arena MoviePro v2.24.1 REAL DOWNLOAD
+ * moviepro.js — Arena MoviePro v2.25 REAL DOWNLOAD
  * 
  * Fixes v2.23 trailer-only bug:
  * - Real anime download via aniwatch (HiAnime) scraper (self-hosted, no external API)
  * - YTS movie search via yts.am API (public)
  * - Fallback to Jikan + TVMaze for search
- * - Own branding Arena MoviePro v2.24.1
+ * - Own branding Arena MoviePro v2.25
  * 
  * Flow:
  * 1. .moviepro <query> → search HiAnime + Jikan + TVMaze + YTS
@@ -230,6 +230,68 @@ async function searchYTS(query) {
     return [];
 }
 
+// ── Cinesubz via back.asitha.top (matheeshasanjana83-alt/abc system) - REAL MOVIE FILES, NO TRAILER ──
+const CINESUBZ_API = 'https://back.asitha.top/api/movie-requests';
+
+async function searchCinesubz(query) {
+    try {
+        const url = `${CINESUBZ_API}/search?q=${encodeURIComponent(query)}&source=cinesubz`;
+        const res = await fetch(url, { headers: { 'User-Agent': 'ArenaAI/2.25' } });
+        if (!res.ok) throw new Error(`Cinesubz ${res.status}`);
+        const json = await res.json();
+        if (!json?.status || !json?.data) return [];
+        return (json.data || []).slice(0, 10).map(item => ({
+            id: item.link || item.title,
+            title: item.title || 'Unknown',
+            year: item.year || 'N/A',
+            episodes: item.type === 'tvshows' ? 0 : 1,
+            score: item.rating || 'N/A',
+            type: item.type === 'tvshows' ? 'TV' : 'Movie',
+            status: 'Unknown',
+            image: item.imageSrc || item.image || '',
+            synopsis: `${item.title} from Cinesubz - Real movie file (no trailer)`,
+            genres: item.sourceLabel || 'Movie',
+            source: 'cinesubz',
+            cinesubzLink: item.link,
+            cinesubzType: item.type,
+            quality: item.quality || 'HD',
+            url: item.link || ''
+        }));
+    } catch (e) {
+        console.log('[moviepro] cinesubz search fail', e.message);
+        return [];
+    }
+}
+
+async function getCinesubzInfo(link, type = 'movies') {
+    try {
+        const endpoint = type === 'tvshows' ? 'tv-info' : 'info';
+        const url = `${CINESUBZ_API}/${endpoint}?url=${encodeURIComponent(link)}&source=cinesubz`;
+        const res = await fetch(url, { headers: { 'User-Agent': 'ArenaAI/2.25' } });
+        if (!res.ok) throw new Error(`Cinesubz info ${res.status}`);
+        const json = await res.json();
+        if (!json?.status || !json?.data) return null;
+        return json.data;
+    } catch (e) {
+        console.log('[moviepro] cinesubz info fail', e.message);
+        return null;
+    }
+}
+
+async function getCinesubzEpisodeInfo(link) {
+    try {
+        const url = `${CINESUBZ_API}/episode-info?url=${encodeURIComponent(link)}&source=cinesubz`;
+        const res = await fetch(url, { headers: { 'User-Agent': 'ArenaAI/2.25' } });
+        if (!res.ok) throw new Error(`Cinesubz ep ${res.status}`);
+        const json = await res.json();
+        if (!json?.status || !json?.data) return null;
+        return json.data;
+    } catch (e) {
+        console.log('[moviepro] cinesubz ep info fail', e.message);
+        return null;
+    }
+}
+
 // ── Popular anime hardcoded fallback (when HiAnime search blocked) ──
 const POPULAR_ANIME = {
     'black clover': { id: 'black-clover-2404', title: 'Black Clover', year: '2017', episodes: 170, score: '7.3', type: 'TV', image: 'https://cdn.myanimelist.net/images/anime/2/88336.jpg' },
@@ -246,12 +308,12 @@ async function search(query) {
     const isAnimeQuery = /black clover|naruto|one piece|bleach|demon slayer|jujutsu|anime|aot|attack on titan|black|clover|boruto|dragon ball|clover/i.test(query);
     const isMovieQuery = /avengers|spiderman|batman|superman|movie|film|hollywood|bollywood/i.test(query);
 
-    // Run in parallel
-    const promises = [searchHiAnime(query), searchAnime(query), searchTVMaze(query)];
+    // Run in parallel - include Cinesubz (matheeshasanjana system) for real movies
+    const promises = [searchHiAnime(query), searchAnime(query), searchTVMaze(query), searchCinesubz(query)];
     if (isMovieQuery || !isAnimeQuery) promises.push(searchYTS(query));
 
-    const [hianime, anime, tv, yts] = await Promise.all([
-        promises[0], promises[1], promises[2], promises[3] || Promise.resolve([])
+    const [hianime, anime, tv, cinesubz, yts] = await Promise.all([
+        promises[0], promises[1], promises[2], promises[3], promises[4] || Promise.resolve([])
     ]);
 
     let results = [];
@@ -277,9 +339,9 @@ async function search(query) {
         }
     }
 
-    if (isAnimeQuery) results = [...popular, ...hianime, ...anime, ...tv, ...(yts || [])];
-    else if (isMovieQuery) results = [...(yts || []), ...tv, ...anime, ...popular, ...hianime];
-    else results = [...popular, ...hianime, ...anime, ...tv, ...(yts || [])];
+    if (isAnimeQuery) results = [...popular, ...hianime, ...anime, ...cinesubz, ...tv, ...(yts || [])];
+    else if (isMovieQuery) results = [...cinesubz, ...(yts || []), ...tv, ...anime, ...popular, ...hianime];
+    else results = [...popular, ...cinesubz, ...hianime, ...anime, ...tv, ...(yts || [])];
 
     // Deduplicate by title
     const seen = new Set();
@@ -303,6 +365,29 @@ async function search(query) {
 }
 
 async function getEpisodes(animeId, source = 'jikan') {
+    if (source === 'cinesubz') {
+        // animeId is actually cinesubz link
+        const info = await getCinesubzInfo(animeId, 'tvshows');
+        if (info && info.episodes) {
+            return info.episodes.map((e,i) => ({
+                id: e.link || i,
+                title: e.title || `Episode ${i+1}`,
+                number: i+1,
+                cinesubzLink: e.link,
+                season: e.season || 1
+            }));
+        }
+        // Try episode list from data
+        if (info && Array.isArray(info)) {
+            return info.map((e,i) => ({
+                id: e.link || i,
+                title: e.title || `Episode ${i+1}`,
+                number: i+1,
+                cinesubzLink: e.link
+            }));
+        }
+        return [];
+    }
     if (source === 'hianime') {
         const eps = await getHiAnimeEpisodes(animeId);
         if (eps.length) return eps;
@@ -341,8 +426,39 @@ async function getEpisodes(animeId, source = 'jikan') {
     return [];
 }
 
-// New: get real download sources for episode
+// New: get real download sources for episode - includes Cinesubz system (matheeshasanjana)
 async function getDownloadLinks(anime, episode, quality = '720p') {
+    // For Cinesubz source - REAL MOVIE FILES (no trailer) from matheeshasanjana system
+    if (anime.source === 'cinesubz' || anime.cinesubzLink) {
+        const link = anime.cinesubzLink || anime.id;
+        const type = anime.cinesubzType || (anime.type === 'TV' ? 'tvshows' : 'movies');
+        if (episode && episode !== 'all' && episode.cinesubzLink) {
+            const epInfo = await getCinesubzEpisodeInfo(episode.cinesubzLink);
+            if (epInfo && epInfo.download) {
+                return {
+                    type: 'cinesubz',
+                    cinesubzLink: episode.cinesubzLink,
+                    downloads: epInfo.download || [],
+                    image: epInfo.image || anime.image,
+                    title: epInfo.title || episode.title
+                };
+            }
+        }
+        const info = await getCinesubzInfo(link, type);
+        if (info) {
+            // info.downloads or info.download is array of {quality, link, size}
+            const downloads = info.downloads || info.download || info.downloadLinks || [];
+            return {
+                type: 'cinesubz',
+                cinesubzLink: link,
+                downloads: downloads,
+                episodes: info.episodes || [],
+                image: info.image || anime.image,
+                title: info.title || anime.title,
+                details: info
+            };
+        }
+    }
     // For HiAnime source, get real m3u8
     if (anime.source === 'hianime' || anime.hianimeId) {
         const animeId = anime.hianimeId || anime.id;
@@ -410,13 +526,13 @@ function formatSearchResults(query, results) {
     txt += `📊 *Found:* ${results.length} results\n\n`;
     txt += `┌─ *SELECT* ─┐\n`;
     results.forEach((r, i) => {
-        const srcIcon = r.source === 'hianime' ? '🔥' : r.source === 'yts' ? '🎥' : r.source === 'jikan' ? '🌸' : '📺';
+        const srcIcon = r.source === 'hianime' ? '🔥' : r.source === 'cinesubz' ? '🎬' : r.source === 'yts' ? '🎥' : r.source === 'jikan' ? '🌸' : '📺';
         txt += `│ ${i + 1}. ${srcIcon} *${r.title}* ${r.year !== 'N/A' ? `(${r.year})` : ''}\n`;
         txt += `│   ${r.type} • ${r.score} ⭐ • ${r.episodes ? r.episodes + ' eps' : r.status} [${r.source}]\n`;
     });
     txt += `└───────────┘\n\n`;
     txt += `💡 Reply *number* (1-${results.length}) to view details\n`;
-    txt += `🔥 *Arena AI v2.24.1 MoviePro*\n`;
+    txt += `🔥 *Arena AI v2.25.0 MoviePro*\n`;
     txt += `⚡ HiAnime + Jikan + YTS + TVMaze`;
     return txt;
 }
@@ -433,7 +549,14 @@ function formatDetails(anime, episodes) {
     txt += `📝 *Synopsis:*\n${(anime.synopsis || '').slice(0, 500)}\n\n`;
     txt += `┌─ *EPISODES* ─┐\n`;
 
-    if (anime.source === 'yts' && anime.torrents?.length) {
+    if (anime.source === 'cinesubz') {
+        txt += `│ 🎬 *Cinesubz Real Movie:*\n`;
+        txt += `│ 📁 Type: ${anime.cinesubzType || anime.type}\n`;
+        txt += `│ 🎥 Quality: ${anime.quality || 'HD'}\n`;
+        txt += `│ 🔗 Link: ${anime.cinesubzLink?.slice(0,40)}...\n`;
+        txt += `│\n│ 💡 Reply number to get real download (no trailer)\n`;
+        txt += `│ ⚡ System: matheeshasanjana83-alt/abc\n`;
+    } else if (anime.source === 'yts' && anime.torrents?.length) {
         txt += `│ 🎥 *Movie Torrents:*\n`;
         anime.torrents.forEach((t, i) => {
             txt += `│ ${i + 1}. ${t.quality} ${t.type} - ${t.size} (S:${t.seeds})\n`;
@@ -460,7 +583,7 @@ function formatDetails(anime, episodes) {
 
     txt += `└───────────┘\n\n`;
     txt += `💡 Reply *number* to select episode/season\n`;
-    txt += `🔥 *Arena MoviePro v2.24.1*\n`;
+    txt += `🔥 *Arena MoviePro v2.25*\n`;
     txt += `⚡ Real download enabled`;
     return txt;
 }
@@ -471,7 +594,20 @@ function formatQualityOptions(season, episode, anime) {
     txt += `🎞️ *Episode:* ${episode === 'all' ? 'All Episodes' : 'Episode ' + (episode.number || episode)}\n`;
     txt += `🔗 *Source:* ${anime.source} ${anime.hianimeId ? '(' + anime.hianimeId + ')' : ''}\n\n`;
 
-    if (anime.source === 'yts') {
+    if (anime.source === 'cinesubz') {
+        txt += `┌─ *QUALITY (Real Movie - No Trailer)* ─┐\n`;
+        txt += `│ 🎬 *System: matheeshasanjana83-alt/abc*\n`;
+        txt += `│ 📁 Direct movie file (not trailer)\n`;
+        txt += `│ 🎥 Qualities will be fetched...\n`;
+        txt += `│\n`;
+        txt += `│ 1. 🎥 1080p Full HD\n`;
+        txt += `│ 2. 🎥 720p HD\n`;
+        txt += `│ 3. 🎥 480p SD\n`;
+        txt += `│ 4. 🎥 360p Mobile\n`;
+        txt += `└───────────┘\n\n`;
+        txt += `💡 Reply number to download REAL movie\n`;
+        txt += `⚡ No trailer - direct file\n`;
+    } else if (anime.source === 'yts') {
         txt += `┌─ *QUALITY (Torrent)* ─┐\n`;
         (anime.torrents || []).forEach((t, i) => {
             txt += `│ ${i + 1}. 🎥 ${t.quality} ${t.type} - ${t.size}\n`;
@@ -502,7 +638,7 @@ function formatQualityOptions(season, episode, anime) {
         txt += `⚡ Real m3u8 via Arena AI`;
     }
 
-    txt += `\n🔥 *Arena MoviePro v2.24.1*\n`;
+    txt += `\n🔥 *Arena MoviePro v2.25*\n`;
     txt += `✅ Own API - No Asitha`;
     return txt;
 }
@@ -510,6 +646,9 @@ function formatQualityOptions(season, episode, anime) {
 module.exports = {
     search,
     searchHiAnime,
+    searchCinesubz,
+    getCinesubzInfo,
+    getCinesubzEpisodeInfo,
     getEpisodes,
     getHiAnimeEpisodes,
     getHiAnimeSources,
